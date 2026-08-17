@@ -14,7 +14,7 @@ on:
 
 concurrency:
   group: proxy-scan-${{ github.ref }}
-  cancel-in-progress: false
+  cancel-in-progress: true
 
 jobs:
   scan-and-update:
@@ -48,13 +48,24 @@ jobs:
         run: |
           cd proxyip-collector
           node src/index.js --limit-per-country 20 --concurrency 32 --max-latency 3000
-          mkdir -p dist
-          touch dist/proxyip_clean.txt
+          test -s dist/proxyip_clean.txt
+
+      - name: ⚡ 立即发布 ProxyIP 精选结果
+        run: |
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "github-actions[bot]"
+          git add -f proxyip-collector/dist/proxyip_clean.txt \
+                     proxyip-collector/dist/summary.json
+          if git diff --staged --quiet; then
+            echo "✅ ProxyIP 数据无变化。"
+          else
+            git commit -m "chore(auto): refresh ProxyIP list [$(date -u +'%Y-%m-%d %H:%M:%S UTC')]"
+            git push origin HEAD:main
+          fi
 
       - name: 🛡️ 阶段二：HTTP HTTPS SOCKS5 出口与 IPPure 风控清洗
         run: |
           cd proxyip-collector
-          mkdir -p dist
           if [ -s dist/http_clean.txt ] || [ -s dist/https_clean.txt ] || [ -s dist/socks5_clean.txt ]; then
             python check_all_chain_proxies.py --workers 24 --timeout 10
           else
@@ -62,23 +73,19 @@ jobs:
           fi
           touch dist/chain_clean_all.txt
 
+      - name: 📤 发布链式代理精选结果
+        run: |
+          git add -f proxyip-collector/dist/chain_clean_all.txt
+          if git diff --staged --quiet; then
+            echo "✅ 链式代理数据无变化。"
+          else
+            git commit -m "chore(auto): refresh clean chain list [$(date -u +'%Y-%m-%d %H:%M:%S UTC')]"
+            git push origin HEAD:main
+          fi
+
       - name: 📋 输出本轮摘要
         run: |
           cd proxyip-collector
           echo "ProxyIP lines: $(wc -l < dist/proxyip_clean.txt)"
           echo "Clean chain lines: $(wc -l < dist/chain_clean_all.txt)"
           cat dist/summary.json || true
-
-      - name: 📤 提交精选输出
-        run: |
-          git config --local user.email "github-actions[bot]@users.noreply.github.com"
-          git config --local user.name "github-actions[bot]"
-          git add -f proxyip-collector/dist/proxyip_clean.txt \
-                     proxyip-collector/dist/chain_clean_all.txt \
-                     proxyip-collector/dist/summary.json
-          if git diff --staged --quiet; then
-            echo "✅ 节点数据无变化，无需提交。"
-          else
-            git commit -m "chore(auto): refresh curated proxy lists [$(date -u +'%Y-%m-%d %H:%M:%S UTC')]"
-            git push origin HEAD:main
-          fi
