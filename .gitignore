@@ -38,3 +38,10 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 log/
+
+# 仅发布自动采集器的精选输出
+!proxyip-collector/dist/
+proxyip-collector/dist/*
+!proxyip-collector/dist/proxyip_clean.txt
+!proxyip-collector/dist/chain_clean_all.txt
+!proxyip-collector/dist/summary.json
