@@ -2,17 +2,25 @@
  * ProxyIP 批量并发测活与性能验证模块
  */
 
-/**
- * 单个节点测活测试
- * @param {object} item 节点对象
- * @param {object} config 配置
- * @returns {Promise<object>} 测试结果
- */
+const DEFAULT_PROXYIP_CHECK_API = 'https://api.090227.xyz/check?proxyip=';
+
 export async function checkSingleProxyIP(item, config) {
-  const checkUrl = `${config.checkApi}${encodeURIComponent(item.ip)}`;
+  // HTTP / HTTPS / SOCKS5 的真实出口、IPPure 风控由第二阶段 Python 完成。
+  // 第一阶段只对 ProxyIP 使用专用检测 API，避免把链式代理误判为失败。
+  if (item.protocolType && item.protocolType !== 'proxyip') {
+    return {
+      ...item,
+      valid: true,
+      responseTime: 0,
+      supportsIpv4: !item.isIpv6,
+      supportsIpv6: item.isIpv6
+    };
+  }
+
+  const checkApi = config.checkApi || DEFAULT_PROXYIP_CHECK_API;
+  const checkUrl = `${checkApi}${encodeURIComponent(item.ip)}`;
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), config.timeoutMs);
-
   const startTime = Date.now();
 
   try {
@@ -38,7 +46,6 @@ export async function checkSingleProxyIP(item, config) {
 
     if (data.success) {
       const responseTime = typeof data.responseTime === 'number' ? data.responseTime : networkTime;
-
       if (responseTime > config.maxLatencyMs) {
         return {
           ...item,
@@ -57,14 +64,14 @@ export async function checkSingleProxyIP(item, config) {
         dualStack: data.dual_stack === true,
         colo: data.colo || ''
       };
-    } else {
-      return {
-        ...item,
-        valid: false,
-        reason: 'Probe failed',
-        responseTime: null
-      };
     }
+
+    return {
+      ...item,
+      valid: false,
+      reason: 'Probe failed',
+      responseTime: null
+    };
   } catch (err) {
     clearTimeout(timeoutId);
     return {
@@ -90,7 +97,7 @@ export async function checkProxyIPList(list, config) {
 
   const total = list.length;
   const concurrency = Math.max(1, config.concurrency || 16);
-  console.log(`[Checker] 开始并发测活，待检测总数: ${total} 个，并发数: ${concurrency} 路 ...`);
+  console.log(`[Checker] 开始并发检查：ProxyIP 在线测活，链式代理留待第二阶段；总数 ${total}，并发 ${concurrency}`);
 
   const results = [];
   let completedCount = 0;
@@ -98,8 +105,8 @@ export async function checkProxyIPList(list, config) {
   let currentIndex = 0;
 
   const printProgress = () => {
-    const percent = ((completedCount / total) * 100).toFixed(1);
-    process.stdout.write(`\r[Checker] 进度: ${completedCount}/${total} (${percent}%) | 有效可用: ${successCount} 个`);
+    const percent = total ? ((completedCount / total) * 100).toFixed(1) : '100.0';
+    process.stdout.write(`\r[Checker] 进度: ${completedCount}/${total} (${percent}%) | 第一阶段保留: ${successCount} 个`);
   };
 
   async function worker() {
@@ -121,7 +128,8 @@ export async function checkProxyIPList(list, config) {
   await Promise.all(workers);
 
   process.stdout.write('\n');
-  console.log(`[Checker] 测活完成！检测总量: ${total}，成功可用: ${results.length}，成功率: ${((results.length / total) * 100).toFixed(1)}%`);
+  const rate = total ? ((results.length / total) * 100).toFixed(1) : '0.0';
+  console.log(`[Checker] 第一阶段完成：总量 ${total}，保留 ${results.length}，保留率 ${rate}%`);
 
   results.sort((a, b) => (a.responseTime || 9999) - (b.responseTime || 9999));
   return results;
