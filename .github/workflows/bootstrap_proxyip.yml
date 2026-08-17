@@ -1,0 +1,43 @@
+name: ⚡ Bootstrap ProxyIP publication
+
+on:
+  push:
+    paths:
+      - '.github/workflows/bootstrap_proxyip.yml'
+  workflow_dispatch:
+
+jobs:
+  bootstrap:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Collect and validate ProxyIP only
+        run: |
+          cd proxyip-collector
+          npm install --ignore-scripts
+          node src/index.js --type proxyip --limit-per-country 20 --concurrency 32 --max-latency 3000
+          test -s dist/proxyip_clean.txt
+
+      - name: Publish initial curated ProxyIP
+        run: |
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "github-actions[bot]"
+          git add -f proxyip-collector/dist/proxyip_clean.txt \
+                     proxyip-collector/dist/summary.json
+          if git diff --staged --quiet; then
+            echo "ProxyIP output unchanged."
+          else
+            git commit -m "chore(auto): bootstrap ProxyIP list"
+            git push origin HEAD:main
+          fi
