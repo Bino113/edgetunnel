@@ -54,14 +54,36 @@ jobs:
         run: |
           git config --local user.email "github-actions[bot]@users.noreply.github.com"
           git config --local user.name "github-actions[bot]"
-          git add -f proxyip-collector/dist/proxyip_clean.txt \
-                     proxyip-collector/dist/summary.json
-          if git diff --staged --quiet; then
-            echo "✅ ProxyIP 数据无变化。"
-          else
+
+          mkdir -p /tmp/proxy-publish
+          cp proxyip-collector/dist/proxyip_clean.txt /tmp/proxy-publish/proxyip_clean.txt
+          cp proxyip-collector/dist/summary.json /tmp/proxy-publish/summary.json
+
+          for attempt in 1 2 3; do
+            echo "Publish ProxyIP attempt ${attempt}/3"
+            git fetch origin main
+            git reset --hard origin/main
+            mkdir -p proxyip-collector/dist
+            cp /tmp/proxy-publish/proxyip_clean.txt proxyip-collector/dist/proxyip_clean.txt
+            cp /tmp/proxy-publish/summary.json proxyip-collector/dist/summary.json
+            git add -f proxyip-collector/dist/proxyip_clean.txt \
+                       proxyip-collector/dist/summary.json
+
+            if git diff --staged --quiet; then
+              echo "✅ ProxyIP 数据无变化。"
+              exit 0
+            fi
+
             git commit -m "chore(auto): refresh ProxyIP list [$(date -u +'%Y-%m-%d %H:%M:%S UTC')]"
-            git push origin HEAD:main
-          fi
+            if git push origin HEAD:main; then
+              echo "✅ ProxyIP 精选结果已发布。"
+              exit 0
+            fi
+            echo "⚠️ main 在发布期间发生变化，重新同步后重试。"
+          done
+
+          echo "❌ ProxyIP 发布连续 3 次未成功。"
+          exit 1
 
       - name: 🛡️ 阶段二：HTTP HTTPS SOCKS5 出口与 IPPure 风控清洗
         run: |
@@ -75,13 +97,35 @@ jobs:
 
       - name: 📤 发布链式代理精选结果
         run: |
-          git add -f proxyip-collector/dist/chain_clean_all.txt
-          if git diff --staged --quiet; then
-            echo "✅ 链式代理数据无变化。"
-          else
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "github-actions[bot]"
+
+          mkdir -p /tmp/chain-publish
+          cp proxyip-collector/dist/chain_clean_all.txt /tmp/chain-publish/chain_clean_all.txt
+
+          for attempt in 1 2 3; do
+            echo "Publish chain list attempt ${attempt}/3"
+            git fetch origin main
+            git reset --hard origin/main
+            mkdir -p proxyip-collector/dist
+            cp /tmp/chain-publish/chain_clean_all.txt proxyip-collector/dist/chain_clean_all.txt
+            git add -f proxyip-collector/dist/chain_clean_all.txt
+
+            if git diff --staged --quiet; then
+              echo "✅ 链式代理数据无变化。"
+              exit 0
+            fi
+
             git commit -m "chore(auto): refresh clean chain list [$(date -u +'%Y-%m-%d %H:%M:%S UTC')]"
-            git push origin HEAD:main
-          fi
+            if git push origin HEAD:main; then
+              echo "✅ 链式代理精选结果已发布。"
+              exit 0
+            fi
+            echo "⚠️ main 在发布期间发生变化，重新同步后重试。"
+          done
+
+          echo "❌ 链式代理发布连续 3 次未成功。"
+          exit 1
 
       - name: 📋 输出本轮摘要
         run: |
