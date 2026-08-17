@@ -1,0 +1,23 @@
+{
+  "name": "proxyip-collector",
+  "version": "1.0.0",
+  "description": "ProxyIP (Cloudflare 反代落地 IP) 独立采集、测活与 TXT 导出工具",
+  "main": "src/index.js",
+  "type": "module",
+  "scripts": {
+    "start": "node src/index.js",
+    "fetch-only": "node src/index.js --no-check",
+    "quick-check": "node src/index.js --limit-per-country 5 --concurrency 20",
+    "full-check": "node src/index.js --limit-per-country 20 --concurrency 32",
+    "test": "node src/index.js --limit 10"
+  },
+  "keywords": [
+    "proxyip",
+    "cloudflare",
+    "edgetunnel",
+    "vless",
+    "proxy-collector"
+  ],
+  "author": "Antigravity",
+  "license": "MIT"
+}
