@@ -1,11 +1,11 @@
 {
-  "updatedAt": "2026-08-22T01:01:43.039Z",
-  "totalValid": 1975,
+  "updatedAt": "2026-08-22T04:29:12.138Z",
+  "totalValid": 1924,
   "countsByType": {
-    "proxyip": 581,
-    "socks5": 388,
-    "http": 421,
-    "https": 585
+    "proxyip": 537,
+    "socks5": 356,
+    "http": 453,
+    "https": 578
   },
   "countryCount": 114,
   "files": {
