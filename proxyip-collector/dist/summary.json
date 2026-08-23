@@ -1,10 +1,10 @@
 {
-  "updatedAt": "2026-08-23T01:06:36.713Z",
-  "totalValid": 1909,
+  "updatedAt": "2026-08-23T04:33:23.226Z",
+  "totalValid": 1935,
   "countsByType": {
-    "proxyip": 522,
-    "socks5": 356,
-    "http": 453,
+    "proxyip": 530,
+    "socks5": 373,
+    "http": 454,
     "https": 578
   },
   "countryCount": 114,
