@@ -1,8 +1,8 @@
 {
-  "updatedAt": "2026-08-24T04:41:05.179Z",
-  "totalValid": 1885,
+  "updatedAt": "2026-08-24T08:44:05.925Z",
+  "totalValid": 1887,
   "countsByType": {
-    "proxyip": 543,
+    "proxyip": 545,
     "socks5": 335,
     "http": 427,
     "https": 580
