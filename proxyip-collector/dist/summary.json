@@ -1,18 +1,18 @@
 {
-  "updatedAt": "2026-09-15T22:42:15.088Z",
-  "totalValid": 2214,
+  "updatedAt": "2026-09-16T03:10:34.947Z",
+  "totalValid": 2215,
   "countsByType": {
-    "proxyip": 606,
+    "proxyip": 607,
     "socks5": 435,
     "http": 565,
     "https": 608
   },
-  "countryCount": 121,
+  "countryCount": 120,
   "files": {
     "proxyip": "proxyip.txt & proxyip_clean.txt (Cloudflare 反代 IP)",
     "socks5": "socks5.txt & socks5_clean.txt (标准 SOCKS5 代理)",
     "http": "http.txt & http_clean.txt (标准 HTTP 代理)",
     "https": "https.txt & https_clean.txt (标准 HTTPS 代理)",
-    "countries": "countries/*.txt (121 个国家/地区)"
+    "countries": "countries/*.txt (120 个国家/地区)"
   }
 }
